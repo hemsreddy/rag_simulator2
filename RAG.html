@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive RAG Engine Simulator</title>
+    <style>
+        :root {
+            --bg-main: #0b0f19;
+            --bg-panel: #131a2c;
+            --bg-accent: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-glow: #38bdf8;
+            --accent-success: #34d399;
+            --border: rgba(56, 189, 248, 0.2);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: system-ui, -apple-system, sans-serif;
+            padding: 40px 20px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #fff 0%, var(--accent-glow) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            color: var(--text-muted);
+        }
+
+        /* Simulator Layout */
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 30px;
+        }
+
+        @media (max-width: 900px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3);
+        }
+
+        h2 {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: var(--accent-glow);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* Knowledge Base Style */
+        .kb-item {
+            background: var(--bg-accent);
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            border-left: 3px solid var(--text-muted);
+            transition: all 0.3s;
+        }
+
+        .kb-item.active-chunk {
+            border-left-color: var(--accent-success);
+            background: rgba(52, 211, 153, 0.1);
+            transform: scale(1.02);
+        }
+
+        /* Interactive Inputs */
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            background: var(--bg-accent);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: white;
+            font-size: 1rem;
+            margin-bottom: 15px;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--accent-glow);
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
+        }
+
+        .btn-container {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px;
+            background: var(--accent-glow);
+            border: none;
+            border-radius: 6px;
+            color: var(--bg-main);
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+        }
+
+        button:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        button:disabled {
+            background: var(--bg-accent);
+            color: var(--text-muted);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* RAG Pipeline Flow Visualization */
+        .pipeline-flow {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .step-card {
+            background: var(--bg-accent);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 8px;
+            padding: 20px;
+            opacity: 0.4;
+            transition: all 0.4s ease;
+        }
+
+        .step-card.active-step {
+            opacity: 1;
+            border-color: var(--accent-glow);
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.1);
+        }
+
+        .step-number {
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: var(--accent-glow);
+            margin-bottom: 5px;
+        }
+
+        .step-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .step-output {
+            background: rgba(0,0,0,0.2);
+            padding: 12px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: #cbd5e1;
+            white-space: pre-wrap;
+            margin-top: 10px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .highlight-text {
+            color: var(--accent-success);
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Retrieval-Augmented Generation Simulator</h1>
+            <p>Step through the technical layers of an architectural RAG workflow in real-time.</p>
+        </header>
+
+        <div class="grid">
+            <!-- LEFT PANEL: KNOWLEDGE BASE & CONTROLS -->
+            <div class="pipeline-flow">
+                <div class="panel">
+                    <h2>Vector Database Chunks</h2>
+                    <div id="kb-container">
+                        <!-- Loaded dynamically via JS -->
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h2>Execution Desk</h2>
+                    <div class="input-group">
+                        <label for="query-input">User Query</label>
+                        <input type="text" id="query-input" value="How do I add passwords to Google Drive links?">
+                    </div>
+                    <div class="btn-container">
+                        <button id="next-btn" onclick="processNextStep()">Next Step →</button>
+                        <button id="reset-btn" onclick="resetSimulator()" style="background: var(--bg-accent); color: white;">Reset</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT PANEL: THE RAG PIPELINE STAGES -->
+            <div class="panel">
+                <h2>Live Pipeline Monitor</h2>
+                <div class="pipeline-flow" id="pipeline-steps">
+                    
+                    <!-- STEP 1 -->
+                    <div class="step-card" id="step-1">
+                        <div class="step-number">STEP 01 // EMBEDDING_ENGINE</div>
+                        <div class="step-title">Query Vectorization</div>
+                        <p>The system converts your plain-text query into a multi-dimensional numerical vector representing semantic intent.</p>
+                        <div class="step-output" id="out-step-1">Awaiting execution...</div>
+                    </div>
+
+                    <!-- STEP 2 -->
+                    <div class="step-card" id="step-2">
+                        <div class="step-number">STEP 02 // VECTOR_SEARCH</div>
+                        <div class="step-title">Semantic Retrieval (Cosine Similarity)</div>
+                        <p>The vector database compares the query vector against pre-indexed knowledge chunks using similarity math to find the closest context matches.</p>
+                        <div class="step-output" id="out-step-2">Awaiting execution...</div>
+                    </div>
+
+                    <!-- STEP 3 -->
+                    <div class="step-card" id="step-3">
+                        <div class="step-number">STEP 03 // PROMPT_AUGMENTATION</div>
+                        <div class="step-title">Augmenting the Prompt Context</div>
+                        <p>The system merges the original user query with the retrieved database facts into a single structured prompt payload for the LLM.</p>
+                        <div class="step-output" id="out-step-3">Awaiting execution...</div>
+                    </div>
+
+                    <!-- STEP 4 -->
+                    <div class="step-card" id="step-4">
+                        <div class="step-number">STEP 04 // INFERENCE_ENGINE</div>
+                        <div class="step-title">Generation via LLM</div>
+                        <p>The Large Language Model consumes the enriched prompt matrix and returns an accurate response anchor entirely grounded in your proprietary documents.</p>
+                        <div class="step-output" id="out-step-4">Awaiting execution...</div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SIMULATOR ENGINE (JS) -->
+    <script>
+        // Simulated Local Vector DB / Database documents
+        const knowledgeBase = [
+            { id: "chunk-1", text: "Google Drive natively lacks an explicit password-protection tool for standalone asset link sharing.", category: "security" },
+            { id: "chunk-2", text: "To secure Drive files, build a custom application prototype utilizing Google Drive APIs and a relational database mapping file access tokens to cryptographic password strings.", category: "security" },
+            { id: "chunk-3", text: "Granular link permissions (Read, Write, Comment) are managed via IAM policies or by implementing authorization validation checks inside your app logic before file delivery.", category: "security" },
+            { id: "chunk-4", text: "Dropbox and OneDrive provide native enterprise toggle setups to add passwords directly inside their file-sharing panels.", category: "competitors" }
+        ];
+
+        let currentStep = 0;
+        let retrievedContext = "";
+
+        // Render the mockup Vector DB items onto the UI
+        function initKB() {
+            const container = document.getElementById('kb-container');
+            container.innerHTML = '';
+            knowledgeBase.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'kb-item';
+                div.id = item.id;
+                div.innerText = item.text;
+                container.appendChild(div);
+            });
+        }
+
+        function processNextStep() {
+            currentStep++;
+            const query = document.getElementById('query-input').value;
+
+            if (currentStep === 1) {
+                // Step 1: Embedding Generation
+                document.getElementById('step-1').classList.add('active-step');
+                // Generate a mockup array of random float vectors
+                const mockVector = Array.from({length: 8}, () => (Math.random() * (0.9 - 0.1) + 0.1).toFixed(4));
+                document.getElementById('out-step-1').innerText = `Query: "${query}"\nGenerated Vector Matrix: [ ${mockVector.join(', ')}... ]`;
+            
+            } else if (currentStep === 2) {
+                // Step 2: Retrieval
+                document.getElementById('step-2').classList.add('active-step');
+                
+                // Highlight the most contextually accurate matching nodes (Chunks 1, 2, and 3 match Drive/Passwords)
+                document.getElementById('chunk-1').classList.add('active-chunk');
+                document.getElementById('chunk-2').classList.add('active-chunk');
+                document.getElementById('chunk-3').classList.add('active-chunk');
+
+                retrievedContext = `${knowledgeBase[0].text}\n${knowledgeBase[1].text}\n${knowledgeBase[2].text}`;
+                
+                document.getElementById('out-step-2').innerText = `Top matching records retrieved:\n\n-> ${knowledgeBase[0].text} (Score: 0.94)\n-> ${knowledgeBase[1].text} (Score: 0.89)\n-> ${knowledgeBase[2].text} (Score: 0.85)`;
+            
+            } else if (currentStep === 3) {
+                // Step 3: Augmentation
+                document.getElementById('step-3').classList.add('active-step');
+                
+                const wrappedPrompt = `[SYSTEM INSTRUCTION]\nAnswer the user query utilizing ONLY the context parameters supplied below. If context does not contain the data points, fail safely.\n\n[CONTEXT DATA]\n${retrievedContext}\n\n[USER QUERY]\n${query}`;
+                document.getElementById('out-step-3').innerText = wrappedPrompt;
+            
+            } else if (currentStep === 4) {
+                // Step 4: Generation
+                document.getElementById('step-4').classList.add('active-step');
+                
+                const finalResponse = `Based on the provided records, Google Drive does not have a native feature to password-protect links. However, you can achieve this by building a prototype using the Google Drive API and a database to map files to passwords. Additionally, you can configure granular permissions (read, write, comment) within your custom platform architecture.`;
+                
+                document.getElementById('out-step-4').innerText = finalResponse;
+                document.getElementById('next-btn').disabled = true;
+            }
+        }
+
+        function resetSimulator() {
+            currentStep = 0;
+            retrievedContext = "";
+            document.getElementById('next-btn').disabled = false;
+            
+            // Clean outputs
+            for(let i = 1; i <= 4; i++) {
+                document.getElementById(`step-${i}`).classList.remove('active-step');
+                document.getElementById(`out-step-${i}`).innerText = "Awaiting execution...";
+            }
+
+            // Un-highlight chunks
+            knowledgeBase.forEach(item => {
+                const element = document.getElementById(item.id);
+                if (element) element.classList.remove('active-chunk');
+            });
+        }
+
+        // Run setup on startup
+        initKB();
+    </script>
+</body>
+</html>
