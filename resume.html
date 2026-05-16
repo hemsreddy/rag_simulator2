@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Futuristic Resume // Terminal_Interface</title>
+    <style>
+        :root {
+            --bg-color: #0a0e17;
+            --panel-bg: rgba(16, 24, 40, 0.75);
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --accent-glow: #00f2fe;
+            --accent-laser: #4facfe;
+            --border-color: rgba(0, 242, 254, 0.2);
+            --font-mono: 'Courier New', Courier, monospace;
+            --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            min-height: 100vh;
+            line-height: 1.6;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(79, 172, 254, 0.05) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(0, 242, 254, 0.05) 0px, transparent 50%);
+        }
+
+        /* Scanline effect */
+        body::before {
+            content: " ";
+            display: block;
+            position: fixed;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 9999;
+            opacity: 0.4;
+            pointer-events: none;
+            background-size: 100% 4px, 6px 100%;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Glassmorphism Panels */
+        .panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            position: relative;
+            margin-bottom: 30px;
+        }
+
+        .panel::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 10px; height: 10px;
+            border-top: 2px solid var(--accent-glow);
+            border-left: 2px solid var(--accent-glow);
+            border-top-left-radius: 4px;
+        }
+
+        /* Typography */
+        .mono {
+            font-family: var(--font-mono);
+            color: var(--accent-glow);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 0.9rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff 0%, var(--accent-glow) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 5px;
+        }
+
+        h2 {
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            border-bottom: 1px dashed var(--border-color);
+            padding-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h3 {
+            color: #fff;
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+
+        p {
+            color: var(--text-muted);
+            margin-bottom: 15px;
+            font-size: 0.95rem;
+        }
+
+        /* Sidebar Details */
+        .profile-img-placeholder {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: 2px solid var(--accent-glow);
+            margin-bottom: 20px;
+            box-shadow: 0 0 15px var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 242, 254, 0.1);
+        }
+
+        .contact-item {
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+        }
+
+        .contact-item span {
+            display: block;
+            color: var(--text-muted);
+        }
+
+        /* Interactive Tech Stack Tags */
+        .filter-controls {
+            margin-bottom: 15px;
+        }
+        
+        .filter-btn {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            transition: all 0.3s;
+        }
+
+        .filter-btn.active, .filter-btn:hover {
+            border-color: var(--accent-glow);
+            color: var(--accent-glow);
+            box-shadow: 0 0 8px rgba(0, 242, 254, 0.3);
+        }
+
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .tag {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            transition: all 0.4s ease;
+        }
+
+        .tag.highlight {
+            border-color: var(--accent-glow);
+            color: var(--accent-glow);
+            background: rgba(0, 242, 254, 0.05);
+        }
+
+        .tag.dimmed {
+            opacity: 0.2;
+        }
+
+        /* Timeline / Experience */
+        .timeline-item {
+            position: relative;
+            padding-left: 25px;
+            border-left: 1px solid var(--border-color);
+            margin-bottom: 25px;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -5px;
+            top: 5px;
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: var(--accent-glow);
+            box-shadow: 0 0 8px var(--accent-glow);
+        }
+
+        .meta-date {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--accent-laser);
+            margin-bottom: 5px;
+        }
+
+        /* Metrics / Progress Grid */
+        .metric-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .metric-card {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .metric-value {
+            font-family: var(--font-mono);
+            font-size: 1.5rem;
+            color: #fff;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <!-- LEFT COLUMN: SYSTEM STATUS / BIO -->
+        <aside>
+            <div class="panel">
+                <div class="profile-img-placeholder">
+                    <span class="mono" style="font-size: 1.5rem;">SYS</span>
+                </div>
+                <p class="mono">// USER_PROFILE_INITIALIZED</p>
+                <h1>Tech Professional</h1>
+                <p class="mono" style="color: var(--accent-laser);">Product Researcher & Prototyper</p>
+                <p style="margin-top: 15px;">
+                    Specialized in bridge-building between complex cloud infrastructure mechanics and seamless human interaction. Proven tracker of isolating core platform friction points and building operational solutions.
+                </p>
+            </div>
+
+            <div class="panel">
+                <h2 class="mono">COMMS_LOG</h2>
+                <div class="contact-item">
+                    <span>NET_ADDRESS</span>
+                    your.email@domain.com
+                </div>
+                <div class="contact-item">
+                    <span>PORTAL</span>
+                    github.com/your-matrix
+                </div>
+                <div class="contact-item">
+                    <span>LOC_COORDINATES</span>
+                    Earth // Remote
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2 class="mono">TECH_MATRIX</h2>
+                <div class="filter-controls">
+                    <button class="filter-btn active" onclick="filterSkills('all')">ALL</button>
+                    <button class="filter-btn" onclick="filterSkills('research')">RESEARCH</button>
+                    <button class="filter-btn" onclick="filterSkills('dev')">DEV</button>
+                </div>
+                <div class="tags" id="skills-container">
+                    <span class="tag" data-cat="research">User Research</span>
+                    <span class="tag" data-cat="research">Platform Analysis</span>
+                    <span class="tag" data-cat="research">Friction Mapping</span>
+                    <span class="tag" data-cat="research">Surveys & Analytics</span>
+                    <span class="tag" data-cat="dev">Rapid Prototyping</span>
+                    <span class="tag" data-cat="dev">Cloud Integration</span>
+                    <span class="tag" data-cat="dev">Granular Permissions APIs</span>
+                    <span class="tag" data-cat="dev">Link Security Architecture</span>
+                    <span class="tag" data-cat="research">Funnel Optimization</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- RIGHT COLUMN: EXPERIENCES / CORE MATRIX -->
+        <main>
+            <!-- CURRENT FOCUS / ACTIVE PROJECT -->
+            <div class="panel" style="border-color: rgba(79, 172, 254, 0.4);">
+                <span class="mono" style="float: right; font-size: 0.75rem; color: var(--accent-laser);">[ ACTIVE_BUILD ]</span>
+                <h2 class="mono">CURRENT_PROJECT</h2>
+                <h3>Next-Gen Cloud Access Guard (Prototype)</h3>
+                <p>
+                    Architecting a secure middle-layer extension for standard cloud storage networks. The system aims to inject zero-trust logic directly into shared file structures.
+                </p>
+                <div class="metric-grid">
+                    <div class="metric-card">
+                        <div class="metric-value">0-Trust</div>
+                        <p class="mono" style="font-size:0.7rem; margin:0;">Permission Engine</p>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">AES-256</div>
+                        <p class="mono" style="font-size:0.7rem; margin:0;">Link Encryption</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WORK HISTORY -->
+            <div class="panel">
+                <h2 class="mono">CORE_EXPERIENCE</h2>
+                
+                <div class="timeline-item">
+                    <div class="meta-date">2025 - PRESENT</div>
+                    <h3>Product & Prototyping Researcher</h3>
+                    <p class="mono" style="font-size: 0.8rem; margin-bottom: 10px;">Tech Ecosystems</p>
+                    <p>
+                        Led deep-dive operational reviews of global cloud ecosystems (Google Drive, OneDrive, Dropbox) focusing on optimization bottlenecks. Investigated data parity anomalies, link lifecycle decay, and synchronization failures for large-payload assets.
+                    </p>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="meta-date">2023 - 2025</div>
+                    <h3>User & Platform Analyst</h3>
+                    <p class="mono" style="font-size: 0.8rem; margin-bottom: 10px;">Data Platforms</p>
+                    <p>
+                        Mapped critical user friction indexes into actionable metrics. Constructed optimized analytics pipelines tracking early-funnel interactions—specifically isolating drop-off mechanisms within platform onboarding sequences to maximize conversion velocity.
+                    </p>
+                </div>
+            </div>
+
+            <!-- ANALYTICAL OBJECTIVES / IMPACT -->
+            <div class="panel">
+                <h2 class="mono">METRIC_IMPACT_LOG</h2>
+                <p>
+                    Synthesizing quantitative funnels into secure, functional digital products.
+                </p>
+                <div class="tags">
+                    <span class="tag highlight">Acquisition Diagnostics</span>
+                    <span class="tag highlight">Activation Optimization</span>
+                    <span class="tag highlight">Retention Architecture</span>
+                    <span class="tag highlight">File Organization Logic</span>
+                </div>
+            </div>
+        </main>
+
+    </div>
+
+    <!-- JAVASCRIPT FOR INTERACTIVE SKILL MATRIX -->
+    <script>
+        function filterSkills(category) {
+            // Update button states
+            const buttons = document.querySelectorAll('.filter-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Filter tags
+            const tags = document.querySelectorAll('#skills-container .tag');
+            tags.forEach(tag => {
+                if (category === 'all') {
+                    tag.classList.remove('dimmed');
+                    tag.classList.remove('highlight');
+                } else {
+                    if (tag.getAttribute('data-cat') === category) {
+                        tag.classList.remove('dimmed');
+                        tag.classList.add('highlight');
+                    } else {
+                        tag.classList.add('dimmed');
+                        tag.classList.remove('highlight');
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
